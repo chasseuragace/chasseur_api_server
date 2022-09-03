@@ -74,7 +74,7 @@ class JWTTokenHandler {
   }
 }
 
-Middleware asyncGreetingProvider({ROLE? role}) {
+Middleware UserFromTokenProvider({ROLE? role}) {
   return provider<Future<User>>((context) async {
     final authTokenKey = context.request.headers.keys
         .where((element) => element.toLowerCase() == 'authorization');
