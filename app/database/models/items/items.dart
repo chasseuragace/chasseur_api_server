@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:mongo_dart/mongo_dart.dart';
+
 import '../base/collections.dart';
 import 'image.dart';
 
@@ -10,20 +12,21 @@ class Items extends Coll {
   final double? price;
   final String? brand;
   final List<Image>? image;
-
-  const Items({
-    this.name,
-    this.colors,
-    this.sizes,
-    this.price,
-    this.brand,
-    this.image,
-  });
+  final ObjectId? oid;
+  const Items(
+      {this.name,
+      this.colors,
+      this.sizes,
+      this.price,
+      this.brand,
+      this.image,
+      this.oid});
 
   factory Items.fromMap(Map<String, dynamic> data) => Items(
+        oid: data['_id'] != null ? data['_id'] as ObjectId : null,
         name: data['name'] as String?,
-        colors: data['colors'] as List<String>?,
-        sizes: data['sizes'] as List<int>?,
+        colors: (data['colors'] as List).cast<String>(),
+        sizes: (data['sizes'] as List).cast<int>(),
         price: (data['price'] as num?)?.toDouble(),
         brand: data['brand'] as String?,
         image: (data['image'] as List<dynamic>?)
@@ -32,6 +35,7 @@ class Items extends Coll {
       );
 
   Map<String, dynamic> toMap() => {
+        'id': oid,
         'name': name,
         'colors': colors,
         'sizes': sizes,

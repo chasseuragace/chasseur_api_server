@@ -18,6 +18,7 @@ Future<Response> onRequest(RequestContext context) async {
     final body = jsonDecode(await context.request.body()) as Map;
     final email = body['email'] as String;
     final password = body['password'].toString();
+
     final validity = await Collection<User>().findBy({
       'email': email,
       "hashed_password":

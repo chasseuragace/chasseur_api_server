@@ -18,30 +18,36 @@ Future<Response> onRequest(RequestContext context) async {
     );
   }
   try {
-    final body = jsonDecode(await context.request.body()) as Map;
-    final email = body['email'] as String;
-
-    if (!isValid(email)) {
+    final body =
+        jsonDecode(await context.request.body()) as Map<String, dynamic>;
+    late final User requestedUser;
+    try {
+      requestedUser = User.fromMap(body);
+      print(requestedUser.toMap());
+      if (requestedUser.name == null) throw LogicEception();
+    } on Exception {
       return Response.json(
         statusCode: HttpStatus.expectationFailed,
-        body: {'message': '$email is not a valid email address'},
+        body: {'message': 'payload is not valid'},
       );
     }
-    if (body['name'] == null)
+
+    if (!isValid(requestedUser.email)) {
       return Response.json(
         statusCode: HttpStatus.expectationFailed,
-        body: {'message': 'name is required'},
+        body: {
+          'message': '${requestedUser.email} is not a valid email address'
+        },
       );
+    }
     final code = Random().nextInt(67898) + 11111;
 
     final passwordHash = JWTTokenHandler.generateHash(
-        email: email, password: body['password'].toString());
+        email: requestedUser.email, password: body['password'].toString());
     final user = User(
-      role: ROLE.customer.name,
-      isVerified: false,
-      email: email,
+      email: requestedUser.email,
       hashedPassword: passwordHash,
-      name: body['name'].toString(),
+      name: requestedUser.name,
       code: code.toString(),
     );
     final res =
@@ -55,7 +61,7 @@ Future<Response> onRequest(RequestContext context) async {
 
     return Response.json(body: {
       'message': 'Registration Successfull',
-      'data': User.fromMap(res ?? {}).toSecureMap()
+      'data': User.fromMap(res).toSecureMap()
     });
   } on LogicEception {
     return Response.json(

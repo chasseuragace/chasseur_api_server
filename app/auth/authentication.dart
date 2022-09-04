@@ -13,6 +13,15 @@ import '../database/models/user.dart';
 
 enum ROLE { admin, staff, customer }
 
+extension e on String {
+  ROLE assignRole() {
+    return ROLE.values.singleWhere(
+      (element) => element.name.toLowerCase() == toLowerCase(),
+      orElse: () => ROLE.customer,
+    );
+  }
+}
+
 class JWTTokenHandler {
   static final String _ISSUER =
       Platform.environment['ISSUER'] ?? 'chasseuragace';
@@ -86,7 +95,7 @@ Middleware UserFromTokenProvider({ROLE? role}) {
 
         // handler.use(provider<User>((context) => User.fromMap(userData)));
         final user = User.fromMap(userData);
-        if (role != null && user.role != role.name) {
+        if (role != null && user.role != role) {
           throw LogicEception();
         }
         return user;

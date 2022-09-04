@@ -36,7 +36,7 @@ class AppDatabase {
 class Collection<T> {
   Coll? data;
 
-  Future<Map<String, dynamic>?> save(Coll data,
+  Future<Map<String, dynamic>> save(Coll data,
       {Map<String, dynamic>? check}) async {
     final collection = appDb.db.collection(T.toString());
     if (check != null) {
@@ -45,8 +45,8 @@ class Collection<T> {
     }
     try {
       final baka = await collection.insertOne(data.toMap());
-
-      return baka.document;
+      Map<String, dynamic> doc = baka.document ?? <String, dynamic>{};
+      return Map<String, dynamic>.from(doc);
     } on LogicEception catch (e) {
       rethrow;
     } on Exception catch (e) {
@@ -68,23 +68,50 @@ class Collection<T> {
     }
   }
 
-  Future<Map<String, dynamic>?> update(
+  Future<Map<String, dynamic>> update(
     Map<String, dynamic> old,
     Map<String, dynamic> newData,
   ) async {
     try {
       print("$old $newData");
       final collection = appDb.db.collection(T.toString());
-      return collection.findAndModify(
+
+      final result = await collection.findAndModify(
         query: old,
         update: newData,
         returnNew: true,
       );
+      if (result == null) throw AppExceptions(messgae: "Action Failed");
+      return result;
     } on Exception catch (e) {
       throw AppExceptions(messgae: e.toString());
     }
   }
 
+  Future<bool> delete(String id) async {
+    try {
+      final collection = appDb.db.collection(T.toString());
+
+      final result = await collection.deleteOne(
+        {'_id': ObjectId.fromHexString(id)},
+      );
+      if (result.isFailure) throw AppExceptions(messgae: 'Action Failed');
+      return result.isSuccess;
+    } on Exception catch (e) {
+      throw AppExceptions(messgae: e.toString());
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAll() async {
+    try {
+      final collection = appDb.db.collection(T.toString());
+
+      final result = await collection.find(<String, dynamic>{}).toList();
+      return result;
+    } on Exception catch (e) {
+      throw AppExceptions(messgae: e.toString());
+    }
+  }
 /*
   update(Map<String, dynamic> old, dynamic data) async {
     var update = data.toJson() as Map<String, dynamic>;
@@ -109,15 +136,7 @@ class Collection<T> {
     return result;
   }
 
-  getAll(dynamic data) async {
-    String collectionName = data.runtimeType.toString();
-    collections.putIfAbsent(
-        collectionName, () => database._db.collection(collectionName));
-    var result =
-        await collections[collectionName]?.find(data.toJson()).toList();
 
-    return result;
-  }
 
   
 
