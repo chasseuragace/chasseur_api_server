@@ -8,6 +8,10 @@ environment:
 
 dependencies:
   dart_frog: ^0.1.0
+  app_models:
+    path: packages/app_models
+    # git : https://github.com/chasseuragace/app_models.git
+  blurhash_dart: ^1.1.0
   jaguar_jwt: ^3.0.0
   crypto:
   mailer: ^5.0.1

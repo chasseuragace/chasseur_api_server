@@ -17,8 +17,10 @@ Future<Response> onRequest(RequestContext context) async {
     }
     final user = await context.read<Future<User>>();
     final body = await context.request.body();
-    final result = await _deleteItem(body);
-    return successResponse();
+    await _deleteItem(body);
+    return successResponse(
+      message: 'Deleted!',
+    );
   } on Exception catch (e) {
     return handelError(e);
   }
@@ -26,8 +28,8 @@ Future<Response> onRequest(RequestContext context) async {
 
 Future<bool> _deleteItem(String body) async {
   final newBody = jsonDecode(body) as Map;
-  if (newBody['_id'] == null)
+  if (newBody['id'] == null)
     throw AppExceptions(message: "id should not be null");
-  final result = Collection<Items>().delete(newBody['_id'].toString());
+  final result = Collection<Category>().delete(newBody['id'].toString());
   return result;
 }

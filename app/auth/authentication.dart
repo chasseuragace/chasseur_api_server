@@ -1,17 +1,18 @@
 // ignore_for_file: non_constant_identifier_names
 
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
-import 'dart:math';
+import 'dart:math' as math;
 
+import 'package:app_models/models/base/collections.dart';
+import 'package:app_models/models/user.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:jaguar_jwt/jaguar_jwt.dart';
 
 import '../database/db.dart';
-import '../database/models/user.dart';
-
-enum ROLE { admin, staff, customer }
+import '../error/errors.dart';
 
 extension e on String {
   ROLE assignRole() {
@@ -51,8 +52,7 @@ class JWTTokenHandler {
         );
       return decClaimSet.subject;
     } on JwtException catch (e) {
-      print(
-          'Error: bad JWT: $e ${e.message == JwtException.tokenExpired.message}');
+      log('Error: bad JWT: $e ${e.message == JwtException.tokenExpired.message}');
       return e;
     } catch (e) {
       return e;
@@ -62,7 +62,7 @@ class JWTTokenHandler {
   static String _randomString(int length) {
     const chars =
         '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-    final rnd = Random(DateTime.now().millisecondsSinceEpoch);
+    final rnd = math.Random(DateTime.now().millisecondsSinceEpoch);
     final buf = StringBuffer();
 
     for (var x = 0; x < length; x++) {
@@ -85,22 +85,24 @@ class JWTTokenHandler {
 
 Middleware UserFromTokenProvider({ROLE? role}) {
   return provider<Future<User>>((context) async {
-    final authTokenKey = context.request.headers.keys
-        .where((element) => element.toLowerCase() == 'authorization');
-    if (authTokenKey.isNotEmpty) {
-      final token = context.request.headers[authTokenKey.first] ?? '';
-      final email = await JWTTokenHandler.validateToken(token);
-      if (email is! Exception) {
-        final userData = await Collection<User>().findBy({'email': email});
+    final authTokenKey = context.request.headers.keys.singleWhere(
+      (element) => element.toLowerCase() == 'authorization',
+      orElse: () =>
+          throw AppExceptions(message: 'Missing authorization header'),
+    );
 
-        // handler.use(provider<User>((context) => User.fromMap(userData)));
-        final user = User.fromMap(userData);
-        if (role != null && user.role != role) {
-          throw LogicEception();
-        }
-        return user;
+    final token = context.request.headers[authTokenKey] ?? '';
+    final email = await JWTTokenHandler.validateToken(token);
+    if (email is! Exception) {
+      final userData = await Collection<User>().findBy({'email': email});
+
+      // handler.use(provider<User>((context) => User.fromMap(userData)));
+      final user = User.fromMap(userData);
+      if (role != null && user.role != role) {
+        throw AppExceptions(message: 'Action not permitted for : ${user.role}');
       }
+      return user;
     }
-    throw AppExceptions(messgae: "Unauthorized!");
+    throw AppExceptions(message: "Something isn't right");
   });
 }

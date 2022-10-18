@@ -6,7 +6,7 @@ import '../../app/auth/authentication.dart';
 Handler middleware(Handler handler) {
   try {
     return handler.use(UserFromTokenProvider());
-  } on Exception catch (e) {
+  } on Exception {
     return handler;
   }
 }
